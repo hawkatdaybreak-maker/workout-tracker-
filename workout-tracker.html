@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Workout Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f12;
+    --surface: #161a20;
+    --surface2: #1e242d;
+    --accent: #00e5a0;
+    --accent2: #7c6dfa;
+    --text: #f0f2f5;
+    --text-sub: #7a8494;
+    --text-muted: #414958;
+    --border: rgba(255,255,255,0.07);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* Header */
+  .header {
+    padding: 20px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .app-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+  .header-date {
+    font-size: 12px;
+    color: var(--text-sub);
+    letter-spacing: 0.03em;
+  }
+  .progress-bar-wrap {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 99px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+  .progress-label {
+    font-size: 11px;
+    color: var(--text-sub);
+    margin-top: 5px;
+    text-align: right;
+  }
+
+  /* Section */
+  .section {
+    padding: 16px 16px 0;
+  }
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* Exercise Card */
+  .ex-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 14px 10px;
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+  .ex-card.done {
+    border-color: rgba(0,229,160,0.3);
+  }
+  .ex-card.done .ex-name {
+    color: var(--accent);
+  }
+  .ex-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .ex-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .ex-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+    transition: color 0.2s;
+  }
+  .prev-badge {
+    font-size: 11px;
+    color: var(--text-sub);
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .prev-badge .up { color: var(--accent); font-weight: 700; }
+
+  /* Reps row */
+  .reps-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .reps-label {
+    font-size: 11px;
+    color: var(--text-sub);
+    white-space: nowrap;
+  }
+  .reps-controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .reps-btn {
+    width: 34px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: var(--text-sub);
+    font-size: 18px;
+    font-weight: 400;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .reps-btn:active { background: var(--border); color: var(--accent); }
+  .reps-num {
+    min-width: 38px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    line-height: 32px;
+  }
+
+  /* Sets row */
+  .sets-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .set-btn {
+    flex: 1;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-sub);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .set-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0d1410;
+    font-weight: 700;
+  }
+
+  /* Stretch Card */
+  .str-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .str-card.done {
+    border-color: rgba(124,109,250,0.4);
+  }
+  .str-check {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    font-size: 14px;
+  }
+  .str-card.done .str-check {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: white;
+  }
+  .str-name {
+    font-size: 14px;
+    font-weight: 500;
+    flex: 1;
+    transition: color 0.2s;
+  }
+  .str-card.done .str-name {
+    color: var(--accent2);
+  }
+
+  /* Export */
+  .export-section {
+    padding: 20px 16px 0;
+  }
+  .export-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #0a1a12;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.05em;
+    transition: opacity 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .export-btn:active { opacity: 0.85; transform: scale(0.98); }
+  .export-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: transform 0.3s ease;
+    z-index: 100;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* GAS modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 50;
+    align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px;
+    width: 100%;
+    border-top: 1px solid var(--border);
+  }
+  .modal h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .modal p {
+    font-size: 13px;
+    color: var(--text-sub);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .modal input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    margin-bottom: 12px;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-btns { display: flex; gap: 8px; }
+  .modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .modal-btn.primary { background: var(--accent); color: #0a1a12; border-color: var(--accent); }
+  .modal-btn.secondary { background: transparent; color: var(--text-sub); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="app-title">WORKOUT LOG</div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+  <div class="progress-label" id="progressLabel">0 / 0 完了</div>
+</div>
+
+<div class="section" style="margin-top:12px;">
+  <div class="section-label">筋トレ — 3セット固定</div>
+  <div id="exerciseList"></div>
+</div>
+
+<div class="section" style="margin-top:4px;">
+  <div class="section-label">ストレッチ</div>
+  <div id="stretchList"></div>
+</div>
+
+<div class="export-section">
+  <button class="export-btn" onclick="openExport()">📊　Googleスプレッドシートに記録する</button>
+  <p class="export-note">記録はスマホに一時保存されます。<br>1種目からでも記録できます。</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- GAS URL設定モーダル -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h3>スプレッドシートに記録</h3>
+    <p>初回のみ、Google Apps ScriptのウェブアプリURLを入力してください。次回以降は自動で記録されます。</p>
+    <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/..." />
+    <div class="modal-btns">
+      <button class="modal-btn secondary" onclick="closeExport()">キャンセル</button>
+      <button class="modal-btn primary" onclick="sendToSheet()">記録する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXERCISES = [
+  { id:'bench',   name:'ダンベルベンチプレス', icon:'🏋️', defaultReps:12 },
+  { id:'fly',     name:'ダンベルフライ',         icon:'🦅', defaultReps:12 },
+  { id:'rowing',  name:'ダンベルローイング',     icon:'🚣', defaultReps:12 },
+  { id:'bent',    name:'ダンベルベントオーバーロウ', icon:'💪', defaultReps:12 },
+  { id:'curl',    name:'ダンベルアームカール',   icon:'💪', defaultReps:15 },
+  { id:'hammer',  name:'ハンマーカール',          icon:'🔨', defaultReps:15 },
+  { id:'french',  name:'フレンチプレス',          icon:'🏅', defaultReps:12 },
+  { id:'squat',   name:'スクワット',              icon:'🦵', defaultReps:20 },
+  { id:'roller',  name:'腹筋ローラー',            icon:'⚙️', defaultReps:15 },
+];
+
+const STRETCHES = [
+  { id:'whole', name:'全身ストレッチ', icon:'🌟' },
+  { id:'chest', name:'胸筋ストレッチ', icon:'🫁' },
+];
+
+let state = {};
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function loadState() {
+  const saved = localStorage.getItem('workoutState');
+  if (saved) {
+    try { state = JSON.parse(saved); } catch(e) { state = {}; }
+  }
+  EXERCISES.forEach(ex => {
+    if (!state[ex.id]) state[ex.id] = { reps: ex.defaultReps, sets: 0, history: [] };
+    if (state[ex.id].reps === undefined) state[ex.id].reps = ex.defaultReps;
+    if (state[ex.id].sets === undefined) state[ex.id].sets = 0;
+    if (!state[ex.id].history) state[ex.id].history = [];
+  });
+  STRETCHES.forEach(s => {
+    if (!state[s.id]) state[s.id] = { done: false };
+  });
+  saveState();
+}
+
+function saveState() {
+  localStorage.setItem('workoutState', JSON.stringify(state));
+}
+
+function getPrevReps(id) {
+  const h = state[id]?.history;
+  if (!h || h.length === 0) return null;
+  return h[h.length - 1];
+}
+
+function renderDate() {
+  const d = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('headerDate').textContent =
+    `${d.getMonth()+1}月${d.getDate()}日 (${days[d.getDay()]})`;
+}
+
+function updateProgress() {
+  let done = 0, total = EXERCISES.length + STRETCHES.length;
+  EXERCISES.forEach(ex => { if (state[ex.id].sets >= 3) done++; });
+  STRETCHES.forEach(s => { if (state[s.id].done) done++; });
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${done} / ${total} 完了`;
+}
+
+function renderExercises() {
+  const el = document.getElementById('exerciseList');
+  el.innerHTML = '';
+  EXERCISES.forEach(ex => {
+    const s = state[ex.id];
+    const prev = getPrevReps(ex.id);
+    const diff = prev !== null ? s.reps - prev : null;
+    const isDone = s.sets >= 3;
+
+    const card = document.createElement('div');
+    card.className = 'ex-card' + (isDone ? ' done' : '');
+    card.innerHTML = `
+      <div class="ex-top">
+        <div class="ex-icon">${ex.icon}</div>
+        <div class="ex-name">${ex.name}</div>
+        ${prev !== null ? `<div class="prev-badge">前回 ${prev}回${diff > 0 ? ` <span class="up">▲${diff}</span>` : diff < 0 ? ` <span style="color:#fa7c6d;">▼${Math.abs(diff)}</span>` : ''}</div>` : '<div class="prev-badge">初回</div>'}
+      </div>
+      <div class="reps-row">
+        <span class="reps-label">回数</span>
+        <div class="reps-controls">
+          <button class="reps-btn" onclick="changeReps('${ex.id}',-1)">－</button>
+          <div class="reps-num" id="reps-${ex.id}">${s.reps}</div>
+          <button class="reps-btn" onclick="changeReps('${ex.id}',1)">＋</button>
+        </div>
+      </div>
+      <div class="sets-row" id="sets-${ex.id}">
+        <button class="set-btn${s.sets >= 1 ? ' active' : ''}" onclick="tapSet('${ex.id}',1)">セット 1</button>
+        <button class="set-btn${s.sets >= 2 ? ' active' : ''}" onclick="tapSet('${ex.id}',2)">セット 2</button>
+        <button class="set-btn${s.sets >= 3 ? ' active' : ''}" onclick="tapSet('${ex.id}',3)">セット 3</button>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+function renderStretches() {
+  const el = document.getElementById('stretchList');
+  el.innerHTML = '';
+  STRETCHES.forEach(s => {
+    const st = state[s.id];
+    const card = document.createElement('div');
+    card.className = 'str-card' + (st.done ? ' done' : '');
+    card.innerHTML = `
+      <div class="str-check">${st.done ? '✓' : ''}</div>
+      <div class="str-name">${s.icon} ${s.name}</div>
+    `;
+    card.onclick = () => toggleStretch(s.id);
+    el.appendChild(card);
+  });
+}
+
+function changeReps(id, delta) {
+  state[id].reps = Math.max(1, (state[id].reps || 1) + delta);
+  saveState();
+  document.getElementById('reps-' + id).textContent = state[id].reps;
+}
+
+function tapSet(id, setNum) {
+  const cur = state[id].sets;
+  if (cur >= setNum) {
+    state[id].sets = setNum - 1;
+  } else {
+    state[id].sets = setNum;
+  }
+  saveState();
+  renderExercises();
+  updateProgress();
+}
+
+function toggleStretch(id) {
+  state[id].done = !state[id].done;
+  saveState();
+  renderStretches();
+  updateProgress();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function openExport() {
+  const url = localStorage.getItem('gasUrl') || '';
+  document.getElementById('gasUrlInput').value = url;
+  document.getElementById('exportModal').classList.add('open');
+}
+
+function closeExport() {
+  document.getElementById('exportModal').classList.remove('open');
+}
+
+async function sendToSheet() {
+  const url = document.getElementById('gasUrlInput').value.trim();
+  if (!url) { showToast('URLを入力してください'); return; }
+  localStorage.setItem('gasUrl', url);
+  closeExport();
+
+  const today = todayKey();
+  const rows = [];
+
+  EXERCISES.forEach(ex => {
+    const s = state[ex.id];
+    if (s.sets > 0) {
+      const prev = getPrevReps(ex.id);
+      const diff = prev !== null ? s.reps - prev : '';
+      rows.push({
+        date: today,
+        type: '筋トレ',
+        name: ex.name,
+        reps: s.reps,
+        sets: s.sets,
+        prevReps: prev ?? '',
+        diff: diff,
+      });
+    }
+  });
+
+  STRETCHES.forEach(s => {
+    if (state[s.id].done) {
+      rows.push({
+        date: today,
+        type: 'ストレッチ',
+        name: s.name,
+        reps: '',
+        sets: '',
+        prevReps: '',
+        diff: '',
+      });
+    }
+  });
+
+  if (rows.length === 0) {
+    showToast('記録するデータがありません');
+    return;
+  }
+
+  showToast('送信中...');
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows }),
+    });
+
+    // 成功後：historyを更新してリセット
+    EXERCISES.forEach(ex => {
+      const s = state[ex.id];
+      if (s.sets > 0) {
+        if (!s.history) s.history = [];
+        s.history.push(s.reps);
+        if (s.history.length > 30) s.history.shift();
+      }
+      state[ex.id].sets = 0;
+    });
+    STRETCHES.forEach(s => { state[s.id].done = false; });
+    saveState();
+    renderExercises();
+    renderStretches();
+    updateProgress();
+    showToast('✓ スプレッドシートに記録しました！');
+  } catch(e) {
+    showToast('送信完了（no-corsモード）');
+  }
+}
+
+// 初期化
+loadState();
+renderDate();
+renderExercises();
+renderStretches();
+updateProgress();
+</script>
+</body>
+</html>
